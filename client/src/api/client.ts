@@ -9,6 +9,7 @@ import type {
   DictionaryLookup,
   HealthResponse,
   ReviewQuality,
+  SessionItem,
   UserProfile,
   VocabCard,
 } from '../types';
@@ -142,6 +143,40 @@ export function loginAccount(payload: {
 
 export function logoutAccount(): Promise<{ ok: boolean }> {
   return request('/api/auth/logout', { method: 'POST' });
+}
+
+export function logoutAllDevices(): Promise<{ ok: boolean }> {
+  return request('/api/auth/logout-all', { method: 'POST' });
+}
+
+export function changePassword(payload: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ ok: boolean }> {
+  return request('/api/auth/change-password', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function fetchSessions(): Promise<{ items: SessionItem[] }> {
+  return request('/api/auth/sessions');
+}
+
+export function revokeSession(sessionId: string): Promise<{ revoked: boolean; id: string }> {
+  return request(`/api/auth/sessions/${encodeURIComponent(sessionId)}`, {
+    method: 'DELETE',
+  });
+}
+
+export function deleteAccount(payload: {
+  password: string;
+  confirmText: 'DELETE';
+}): Promise<{ deleted: boolean }> {
+  return request('/api/auth/delete-account', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
 }
 
 export function updateProfile(payload: {

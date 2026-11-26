@@ -14,6 +14,16 @@ export interface UserProfile {
   createdAt: string;
 }
 
+export interface SessionItem {
+  id: string;
+  userAgent: string;
+  ipAddress: string;
+  createdAt: string;
+  lastUsedAt: string;
+  expiresAt: string;
+  isCurrent: boolean;
+}
+
 export interface VocabCard {
   id: string;
   word: string;

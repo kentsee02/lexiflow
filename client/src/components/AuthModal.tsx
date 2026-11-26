@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { X } from 'lucide-react';
+import { Eye, EyeOff, X } from 'lucide-react';
 import { loginAccount, registerAccount } from '../api/client';
 import type { UserProfile } from '../types';
 
@@ -8,19 +8,40 @@ interface AuthModalProps {
   onAuthenticated: (user: UserProfile) => Promise<void>;
 }
 
+export function evaluatePasswordChecks(password: string) {
+  const hasMinLen = password.length >= 8;
+  const hasUpper = /[A-Z]/.test(password);
+  const hasLower = /[a-z]/.test(password);
+  const hasDigit = /[0-9]/.test(password);
+  const score = [hasMinLen, hasUpper, hasLower, hasDigit].filter(Boolean).length;
+  return {
+    hasMinLen,
+    hasUpper,
+    hasLower,
+    hasDigit,
+    score,
+    allValid: score === 4,
+    label: score <= 1 ? '弱' : score <= 3 ? '中' : '强',
+    levelClass: score <= 1 ? 'weak' : score <= 3 ? 'fair' : 'strong',
+  };
+}
+
 export function AuthModal({ onClose, onAuthenticated }: AuthModalProps) {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
 
+  const pwdChecks = evaluatePasswordChecks(password);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
-    if (mode === 'register' && password.length < 8) {
-      setError('密码长度至少需要 8 位字符。');
+    if (mode === 'register' && !pwdChecks.allValid) {
+      setError('请确保密码满足全部 4 项安全要求。');
       return;
     }
 
@@ -81,7 +102,7 @@ export function AuthModal({ onClose, onAuthenticated }: AuthModalProps) {
         </div>
 
         <p style={{ fontSize: '0.84rem', color: 'var(--ink-secondary)', margin: '12px 0 0' }}>
-          登录后，你的生词库、SM-2 复习计划、导入文章与热力图数据将持久化保存在 PostgreSQL 云端数据库。
+          登录后，你的生词库、SM-2 复习计划、导入文章与热力图数据将持久化保存在云端。
         </p>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
@@ -111,20 +132,63 @@ export function AuthModal({ onClose, onAuthenticated }: AuthModalProps) {
           </div>
 
           <div className="form-field">
-            <label htmlFor="auth-password">密码 Password（至少 8 位）</label>
-            <input
-              id="auth-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
+            <label htmlFor="auth-password">密码 Password</label>
+            <div className="pwd-input-wrap">
+              <input
+                id="auth-password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+              />
+              <button
+                type="button"
+                className="pwd-eye-btn"
+                onClick={() => setShowPassword((s) => !s)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+
+            {mode === 'register' && password.length > 0 && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginTop: 4 }}>
+                  <span style={{ color: 'var(--ink-secondary)' }}>密码强度：{pwdChecks.label}</span>
+                </div>
+                <div className="pwd-meter-track">
+                  <div
+                    className={`pwd-meter-fill ${pwdChecks.levelClass}`}
+                    style={{ width: `${(pwdChecks.score / 4) * 100}%` }}
+                  />
+                </div>
+                <div className="pwd-checklist">
+                  <span className={`pwd-check-item ${pwdChecks.hasMinLen ? 'ok' : ''}`}>
+                    {pwdChecks.hasMinLen ? '✓' : '○'} 至少 8 位字符
+                  </span>
+                  <span className={`pwd-check-item ${pwdChecks.hasUpper ? 'ok' : ''}`}>
+                    {pwdChecks.hasUpper ? '✓' : '○'} 包含大写字母 (A-Z)
+                  </span>
+                  <span className={`pwd-check-item ${pwdChecks.hasLower ? 'ok' : ''}`}>
+                    {pwdChecks.hasLower ? '✓' : '○'} 包含小写字母 (a-z)
+                  </span>
+                  <span className={`pwd-check-item ${pwdChecks.hasDigit ? 'ok' : ''}`}>
+                    {pwdChecks.hasDigit ? '✓' : '○'} 包含数字 (0-9)
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {error && <p style={{ color: 'var(--danger)', fontSize: '0.84rem', margin: 0 }}>{error}</p>}
 
-          <button type="submit" className="btn btn-primary" disabled={submitting} style={{ marginTop: 4 }}>
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={submitting || (mode === 'register' && !pwdChecks.allValid)}
+            style={{ marginTop: 4 }}
+          >
             {submitting ? '处理中...' : mode === 'login' ? '立即登录' : '注册并初始化词库'}
           </button>
         </form>

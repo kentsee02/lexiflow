@@ -1,6 +1,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { hashPassword, verifyPassword } from '../src/utils/password.js';
+import { validatePasswordStrength } from '../src/utils/passwordPolicy.js';
 import { signAuthToken, verifyAuthToken } from '../src/utils/jwt.js';
 import { calculateSm2Review, previewReviewIntervals } from '../src/services/srs.js';
 import { buildHeatmap, computeStreakDays } from '../src/services/dashboard.js';
@@ -27,12 +28,33 @@ describe('Password utilities', () => {
 
 describe('JWT utilities', () => {
   it('signs and verifies valid tokens and rejects tampered tokens', () => {
-    const token = signAuthToken({ sub: 'user-123', email: 'learner@example.com' });
+    const token = signAuthToken({
+      sub: 'user-123',
+      email: 'learner@example.com',
+      sid: 'sess-123',
+      ver: 0,
+    });
     const verified = verifyAuthToken(token);
 
-    assert.deepEqual(verified, { sub: 'user-123', email: 'learner@example.com' });
+    assert.deepEqual(verified, {
+      sub: 'user-123',
+      email: 'learner@example.com',
+      sid: 'sess-123',
+      ver: 0,
+    });
     assert.equal(verifyAuthToken(`${token}tampered`), null);
     assert.equal(verifyAuthToken('not.a.jwt'), null);
+  });
+});
+
+describe('Password strength policy', () => {
+  it('rejects weak, short, or email-derived passwords and accepts strong ones', () => {
+    assert.equal(validatePasswordStrength('Ab1!').valid, false);
+    assert.equal(validatePasswordStrength('alllowercase12').valid, false);
+    assert.equal(validatePasswordStrength('NoDigitsHere').valid, false);
+    assert.equal(validatePasswordStrength('Password123').valid, false);
+    assert.equal(validatePasswordStrength('AlexLearner99', 'alexlearner@example.com').valid, false);
+    assert.equal(validatePasswordStrength('StrongPass2026!', 'alex@example.com').valid, true);
   });
 });
 

@@ -6,11 +6,14 @@ import type http from 'node:http';
 import { createApp } from '../src/app.js';
 import { prisma } from '../src/db/prisma.js';
 
-describe('LexiFlow Auth & Public API Integration (PostgreSQL)', () => {
+describe('LexiFlow Auth, Security & Session Integration (PostgreSQL)', () => {
   let server: http.Server;
   let baseUrl = '';
-  const testEmail = `test-${crypto.randomUUID().slice(0, 8)}@example.com`;
+  const suffix = crypto.randomUUID().slice(0, 8);
+  const testEmail = `test-${suffix}@example.com`;
+  const lockEmail = `lock-${suffix}@example.com`;
   const testPassword = 'TestPassword123!';
+  const newPassword = 'RotatedPassword456!';
   let authCookie = '';
 
   before(async () => {
@@ -28,7 +31,7 @@ describe('LexiFlow Auth & Public API Integration (PostgreSQL)', () => {
   });
 
   after(async () => {
-    await prisma.user.deleteMany({ where: { email: testEmail } });
+    await prisma.user.deleteMany({ where: { email: { in: [testEmail, lockEmail] } } });
     if (server) {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }
@@ -57,7 +60,18 @@ describe('LexiFlow Auth & Public API Integration (PostgreSQL)', () => {
     assert.ok(seed.articles.length >= 3);
   });
 
-  it('registers a user, seeds starter vocab cards, and sets HttpOnly cookie', async () => {
+  it('rejects weak passwords on register and seeds starter vocab cards on strong register', async () => {
+    const weakRes = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: testEmail,
+        password: 'weakpassword',
+        displayName: 'Weak User',
+      }),
+    });
+    assert.equal(weakRes.status, 400);
+
     const res = await fetch(`${baseUrl}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -125,6 +139,17 @@ describe('LexiFlow Auth & Public API Integration (PostgreSQL)', () => {
     assert.equal(patchBody.user.dailyGoal, 30);
   });
 
+  it('blocks cross-origin mutating requests with 403', async () => {
+    const csrfRes = await fetch(`${baseUrl}/api/auth/logout`, {
+      method: 'POST',
+      headers: {
+        Origin: 'https://evil.example',
+        Cookie: authCookie,
+      },
+    });
+    assert.equal(csrfRes.status, 403);
+  });
+
   it('migrates guest vocab and articles without duplicating starter words', async () => {
     const res = await fetch(`${baseUrl}/api/auth/migrate-guest`, {
       method: 'POST',
@@ -164,24 +189,140 @@ describe('LexiFlow Auth & Public API Integration (PostgreSQL)', () => {
     assert.equal(body.importedArticles, 1);
   });
 
-  it('logs out and logs back in with valid credentials', async () => {
-    const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, { method: 'POST' });
+  it('revokes session cookie immediately on logout and supports multi-device password change', async () => {
+    const oldCookie = authCookie;
+    const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
+      method: 'POST',
+      headers: { Cookie: oldCookie },
+    });
     assert.equal(logoutRes.status, 200);
 
-    const badLogin = await fetch(`${baseUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: testEmail, password: 'WrongPassword123' }),
+    // Replaying revoked cookie must be rejected
+    const replayMe = await fetch(`${baseUrl}/api/auth/me`, {
+      headers: { Cookie: oldCookie },
     });
-    assert.equal(badLogin.status, 401);
+    assert.equal(((await replayMe.json()) as { user: unknown }).user, null);
 
-    const goodLogin = await fetch(`${baseUrl}/api/auth/login`, {
+    const replayVocab = await fetch(`${baseUrl}/api/vocab`, {
+      headers: { Cookie: oldCookie },
+    });
+    assert.equal(replayVocab.status, 401);
+
+    // Log in two separate devices
+    const loginA = await fetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Device-A' },
       body: JSON.stringify({ email: testEmail, password: testPassword }),
     });
-    assert.equal(goodLogin.status, 200);
-    const cookie = goodLogin.headers.get('set-cookie') ?? '';
-    assert.ok(cookie.includes('lexiflow_token='));
+    assert.equal(loginA.status, 200);
+    const cookieA = (loginA.headers.get('set-cookie') ?? '').split(';')[0] ?? '';
+
+    const loginB = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'User-Agent': 'Device-B' },
+      body: JSON.stringify({ email: testEmail, password: testPassword }),
+    });
+    assert.equal(loginB.status, 200);
+    const cookieB = (loginB.headers.get('set-cookie') ?? '').split(';')[0] ?? '';
+
+    const sessionsRes = await fetch(`${baseUrl}/api/auth/sessions`, {
+      headers: { Cookie: cookieA },
+    });
+    assert.equal(sessionsRes.status, 200);
+    const sessionsBody = (await sessionsRes.json()) as {
+      items: Array<{ id: string; isCurrent: boolean }>;
+    };
+    assert.equal(sessionsBody.items.length, 2);
+
+    // Device A changes password -> Device B must immediately lose access
+    const changeRes = await fetch(`${baseUrl}/api/auth/change-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: cookieA },
+      body: JSON.stringify({
+        currentPassword: testPassword,
+        newPassword,
+      }),
+    });
+    assert.equal(changeRes.status, 200);
+    authCookie = (changeRes.headers.get('set-cookie') ?? '').split(';')[0] ?? '';
+
+    const deviceBCheck = await fetch(`${baseUrl}/api/vocab`, {
+      headers: { Cookie: cookieB },
+    });
+    assert.equal(deviceBCheck.status, 401);
+
+    const deviceACheck = await fetch(`${baseUrl}/api/vocab`, {
+      headers: { Cookie: authCookie },
+    });
+    assert.equal(deviceACheck.status, 200);
+
+    // Logout all invalidates current session as well
+    const logoutAllRes = await fetch(`${baseUrl}/api/auth/logout-all`, {
+      method: 'POST',
+      headers: { Cookie: authCookie },
+    });
+    assert.equal(logoutAllRes.status, 200);
+
+    const afterLogoutAll = await fetch(`${baseUrl}/api/vocab`, {
+      headers: { Cookie: authCookie },
+    });
+    assert.equal(afterLogoutAll.status, 401);
+  });
+
+  it('locks account after 5 failed login attempts and allows account deletion with password', async () => {
+    const regLock = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: lockEmail,
+        password: testPassword,
+        displayName: 'Lock Tester',
+      }),
+    });
+    assert.equal(regLock.status, 201);
+    const lockCookie = (regLock.headers.get('set-cookie') ?? '').split(';')[0] ?? '';
+
+    for (let i = 1; i <= 4; i += 1) {
+      const failRes = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: lockEmail, password: 'WrongPassword123' }),
+      });
+      assert.equal(failRes.status, 401);
+    }
+
+    const fifthFail = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: lockEmail, password: 'WrongPassword123' }),
+    });
+    assert.equal(fifthFail.status, 429);
+
+    // Even the correct password must be blocked while locked
+    const lockedCorrect = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: lockEmail, password: testPassword }),
+    });
+    assert.equal(lockedCorrect.status, 429);
+
+    // Wrong password cannot delete account
+    const badDel = await fetch(`${baseUrl}/api/auth/delete-account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: lockCookie },
+      body: JSON.stringify({ password: 'WrongPassword123', confirmText: 'DELETE' }),
+    });
+    assert.equal(badDel.status, 401);
+
+    // Correct password + DELETE deletes account permanently
+    const goodDel = await fetch(`${baseUrl}/api/auth/delete-account`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: lockCookie },
+      body: JSON.stringify({ password: testPassword, confirmText: 'DELETE' }),
+    });
+    assert.equal(goodDel.status, 200);
+
+    const row = await prisma.user.findUnique({ where: { email: lockEmail } });
+    assert.equal(row, null);
   });
 });

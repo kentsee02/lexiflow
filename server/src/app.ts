@@ -3,6 +3,7 @@ import cors from 'cors';
 import express, { type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
 import { env } from './config/env.js';
+import { verifyOrigin } from './middleware/csrfOrigin.js';
 import { apiRateLimiter } from './middleware/rateLimit.js';
 import { aiRouter } from './routes/ai.js';
 import { articlesRouter } from './routes/articles.js';
@@ -24,6 +25,7 @@ export function createApp() {
       credentials: true,
     })
   );
+  app.use(verifyOrigin);
   app.use(cookieParser());
   app.use(express.json({ limit: '512kb' }));
   app.use('/api', apiRateLimiter);

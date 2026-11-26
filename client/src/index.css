@@ -1198,6 +1198,87 @@ textarea:focus-visible {
   color: var(--ink-secondary);
 }
 
+/* Account Security & Password Meter */
+.pwd-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.pwd-input-wrap input {
+  width: 100%;
+  padding-right: 38px;
+}
+
+.pwd-eye-btn {
+  position: absolute;
+  right: 6px;
+  border: none;
+  background: transparent;
+  color: var(--ink-muted);
+  padding: 5px;
+  display: grid;
+  place-items: center;
+}
+
+.pwd-meter-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-subtle);
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.pwd-meter-fill {
+  height: 100%;
+  transition: width 0.2s ease, background-color 0.2s ease;
+}
+
+.pwd-meter-fill.weak {
+  background: var(--danger);
+}
+
+.pwd-meter-fill.fair {
+  background: var(--accent-amber);
+}
+
+.pwd-meter-fill.strong {
+  background: var(--success);
+}
+
+.pwd-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 10px;
+  font-size: 0.76rem;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+
+.pwd-check-item.ok {
+  color: var(--success);
+}
+
+.session-item {
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  background: var(--bg-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.danger-box {
+  border: 1px solid var(--danger);
+  background: var(--danger-soft);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+  font-size: 0.86rem;
+}
+
 @media (max-width: 900px) {
   .stats-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));

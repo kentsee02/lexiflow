@@ -6,6 +6,7 @@ import {
   LogIn,
   LogOut,
   Moon,
+  ShieldCheck,
   Sun,
   User,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ interface HeaderProps {
   apiLatency: number | null;
   user: UserProfile | null;
   onOpenAuth: () => void;
+  onOpenSecurity: () => void;
   onLogout: () => void;
 }
 
@@ -42,6 +44,7 @@ export function Header({
   apiLatency,
   user,
   onOpenAuth,
+  onOpenSecurity,
   onLogout,
 }: HeaderProps) {
   return (
@@ -161,6 +164,16 @@ export function Header({
             <div className="user-chip">
               <User size={14} color="var(--brand-teal)" />
               <span>{user.displayName}</span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-icon"
+                style={{ padding: 3 }}
+                onClick={onOpenSecurity}
+                title="账号安全中心"
+                aria-label="Account security"
+              >
+                <ShieldCheck size={15} />
+              </button>
               <button
                 type="button"
                 className="btn btn-ghost btn-icon"

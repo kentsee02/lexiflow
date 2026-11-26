@@ -22,6 +22,7 @@ import {
   toggleArticleComplete,
   updateProfile,
 } from './api/client';
+import { AccountSecurityModal } from './components/AccountSecurityModal';
 import { AddWordModal } from './components/AddWordModal';
 import { AuthModal } from './components/AuthModal';
 import { DashboardView } from './components/DashboardView';
@@ -93,6 +94,7 @@ export default function App() {
   const [errorMsg, setErrorMsg] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [toast, setToast] = useState('');
 
   useEffect(() => {
@@ -212,14 +214,21 @@ export default function App() {
     showToast(`已同步 ${res.importedWords} 个生词、${res.importedArticles} 篇文章到云端`);
   };
 
+  const resetToGuestMode = useCallback(
+    async (message: string) => {
+      setUser(null);
+      setPendingSyncCount(null);
+      const seed = await fetchGuestSeed();
+      const initialized = initGuestStore(seed.vocab, seed.articles);
+      applyGuestSnapshot(initialized);
+      showToast(message);
+    },
+    [applyGuestSnapshot, showToast]
+  );
+
   const handleLogout = async () => {
     await logoutAccount();
-    setUser(null);
-    setPendingSyncCount(null);
-    const seed = await fetchGuestSeed();
-    const initialized = initGuestStore(seed.vocab, seed.articles);
-    applyGuestSnapshot(initialized);
-    showToast('已退出登录，当前为游客体验模式');
+    await resetToGuestMode('已退出登录，当前为游客体验模式');
   };
 
   const handleUpdateDailyGoal = async (dailyGoal: number) => {
@@ -400,6 +409,7 @@ export default function App() {
         apiLatency={apiLatency}
         user={user}
         onOpenAuth={() => setShowAuthModal(true)}
+        onOpenSecurity={() => setShowSecurityModal(true)}
         onLogout={() => void handleLogout()}
       />
 
@@ -522,6 +532,16 @@ export default function App() {
         <AuthModal
           onClose={() => setShowAuthModal(false)}
           onAuthenticated={handleAuthenticated}
+        />
+      )}
+
+      {user && showSecurityModal && (
+        <AccountSecurityModal
+          user={user}
+          onClose={() => setShowSecurityModal(false)}
+          onLoggedOutAll={() => resetToGuestMode('已退出全部设备登录')}
+          onAccountDeleted={() => resetToGuestMode('账号及云端数据已永久注销')}
+          onNotify={showToast}
         />
       )}
 

@@ -41,11 +41,11 @@ jobs:
       - name: Install backend dependencies & generate Prisma client
         run: |
           npm ci --prefix server
-          npx --prefix server prisma generate
+          npm run db:generate --prefix server
 
       - name: Run Prisma migrations, seed, build, and tests
         run: |
-          npx --prefix server prisma migrate deploy
+          npm run db:deploy --prefix server
           npm run db:seed --prefix server
           npm run build --prefix server
           npm test --prefix server

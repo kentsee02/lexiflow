@@ -85,14 +85,16 @@ npm run build
 
 仓库中的 `deploy/` 目录与 `docker-compose.yml` 提供了经典混合部署模板：
 - `docker-compose.yml`：运行 PostgreSQL 16 数据库并挂载持久化数据卷（仅绑定本机回环端口）。
+- `deploy/setup-vps.sh`：一键初始化 Ubuntu 24.04/22.04 服务器（配置 swap、UFW 防火墙、Nginx、Node.js 22、PM2 与 Docker Compose）。
 - `deploy/ecosystem.config.cjs`：使用 PM2 守护编译后的后端服务（`server/dist/index.js`）。
 - `deploy/nginx/lexiflow.conf`：静态托管 `client/dist/`（含 SPA 路由回退），并将 `/api/` 反向代理至 `127.0.0.1:4000`。
 - `deploy/deploy.sh`：拉取代码、执行 `prisma migrate deploy`、构建前后端产物并平滑重启 PM2。
+- `deploy/backup-db.sh`：基于 `pg_dump` 的 PostgreSQL 自动压缩备份与过期清理脚本。
 
 ## 开发路线
 
 - [x] PostgreSQL + Prisma 数据层、TypeScript 后端重构与 Cookie JWT 用户认证
 - [x] 后端 SM-2 间隔重复引擎、90 天学习热力图统计、词典缓存查词、文章导入与可选 AI 接口
 - [x] 前端界面全面升级（仪表盘热力图、SRS 复习队列、划词查词弹窗、账号弹窗与深浅色主题）
-- [ ] 生产部署脚本完善与数据库备份规范
+- [x] 生产部署脚本完善与数据库备份规范
 - [ ] 多词书管理与 CSV/JSON 批量导入导出

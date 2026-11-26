@@ -85,14 +85,16 @@ npm run build
 
 The `deploy/` directory and `docker-compose.yml` provide a hybrid production setup:
 - `docker-compose.yml`: Runs PostgreSQL 16 bound to `127.0.0.1:5432` with persistent volume storage.
+- `deploy/setup-vps.sh`: Bootstraps Ubuntu 24.04/22.04 LTS with swap, UFW firewall, Nginx, Node.js 22, PM2, and Docker Compose.
 - `deploy/ecosystem.config.cjs`: Runs the compiled Express server (`server/dist/index.js`) under PM2.
 - `deploy/nginx/lexiflow.conf`: Serves static frontend files from `client/dist/` with SPA fallback and proxies `/api/` to `127.0.0.1:4000`.
 - `deploy/deploy.sh`: Pulls updates, runs `prisma migrate deploy`, rebuilds server & client bundles, and reloads PM2.
+- `deploy/backup-db.sh`: Runs compressed `pg_dump` PostgreSQL backups with configurable retention.
 
 ## Roadmap
 
 - [x] PostgreSQL + Prisma data layer, TypeScript backend, and Cookie JWT authentication
 - [x] Backend SM-2 spaced repetition engine, 90-day heatmap analytics, dictionary cache, article import, and optional AI endpoints
 - [x] Frontend UI upgrade (Dashboard heatmap, SRS review queue, click-to-lookup reader, auth modal & dark mode)
-- [ ] Production deployment automation & database backup runbook
+- [x] Production deployment automation & database backup runbook
 - [ ] Multi-deck vocabulary lists & CSV/JSON import/export

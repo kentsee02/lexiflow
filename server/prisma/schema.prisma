@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  displayName  String
+  dailyGoal    Int          @default(20)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  vocabCards   VocabCard[]
+  articles     Article[]
+  reviewLogs   ReviewLog[]
+  aiUsageLogs  AiUsageLog[]
+}
+
+model VocabCard {
+  id              String      @id @default(cuid())
+  userId          String
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  word            String
+  phonetic        String      @default("")
+  audioUrl        String      @default("")
+  partOfSpeech    String      @default("word")
+  meaningZh       String
+  definitionEn    String      @default("")
+  example         String
+  exampleZh       String      @default("")
+  level           String      @default("B2")
+  category        String      @default("Daily")
+  sourceArticleId String?
+
+  status          String      @default("new")
+  easeFactor      Float       @default(2.5)
+  intervalDays    Int         @default(0)
+  repetitions     Int         @default(0)
+  nextReviewAt    DateTime    @default(now())
+  lastReviewedAt  DateTime?
+
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  reviewLogs      ReviewLog[]
+
+  @@index([userId, nextReviewAt])
+  @@index([userId, word])
+}
+
+model Article {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String
+  titleZh     String   @default("")
+  category    String   @default("General")
+  level       String   @default("B2")
+  readMinutes Int      @default(3)
+  paragraphs  Json
+  keyTerms    Json
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+}
+
+model ReviewLog {
+  id         String     @id @default(cuid())
+  userId     String
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId     String?
+  card       VocabCard? @relation(fields: [cardId], references: [id], onDelete: SetNull)
+
+  actionType String
+  quality    Int?
+  score      Int?
+  total      Int?
+  createdAt  DateTime   @default(now())
+
+  @@index([userId, createdAt])
+}
+
+model DictionaryCache {
+  word         String   @id
+  phonetic     String   @default("")
+  audioUrl     String   @default("")
+  partOfSpeech String   @default("")
+  definitionEn String   @default("")
+  meaningZh    String   @default("")
+  example      String   @default("")
+  updatedAt    DateTime @updatedAt
+}
+
+model AiUsageLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  feature   String
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

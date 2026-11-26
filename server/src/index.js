@@ -1,9 +1,0 @@
-import 'dotenv/config';
-import { createApp } from './app.js';
-
-const PORT = Number.parseInt(process.env.PORT || '4000', 10);
-const app = createApp();
-
-app.listen(PORT, () => {
-  console.log(`LexiFlow API listening on http://localhost:${PORT}`);
-});

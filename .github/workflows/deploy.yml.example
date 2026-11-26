@@ -1,9 +1,9 @@
-# 将此文件重命名为 deploy.yml 并配置 GitHub Repository Secrets 后即可开启自动部署：
-# 需要配置的 Secrets:
-#   - VPS_HOST: 云服务器公网 IP（例如 47.xxx.xxx.xxx）
-#   - VPS_USER: SSH 用户名（例如 ubuntu 或 deploy）
-#   - VPS_SSH_KEY: 用于免密登录服务器的私钥内容（~/.ssh/id_ed25519）
-#   - VPS_PORT: SSH 端口（默认 22）
+# Rename this file to deploy.yml and configure repository secrets to enable SSH auto-deployment:
+# Required secrets:
+#   - VPS_HOST: Public IP or hostname of your VPS
+#   - VPS_USER: SSH username
+#   - VPS_SSH_KEY: Private SSH key for deployment
+#   - VPS_PORT: SSH port (defaults to 22)
 
 name: Deploy to VPS
 

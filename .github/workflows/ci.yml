@@ -10,6 +10,25 @@ jobs:
   verify:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lexiflow
+          POSTGRES_PASSWORD: lexiflow_dev_password
+          POSTGRES_DB: lexiflow
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U lexiflow -d lexiflow"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
+    env:
+      DATABASE_URL: postgresql://lexiflow:lexiflow_dev_password@127.0.0.1:5432/lexiflow?schema=public
+      JWT_SECRET: ci-test-jwt-secret-with-more-than-32-characters
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -19,12 +38,19 @@ jobs:
         with:
           node-version: 22
 
-      - name: Install backend dependencies and run API tests
+      - name: Install backend dependencies & generate Prisma client
         run: |
-          npm install --prefix server
+          npm ci --prefix server
+          npx --prefix server prisma generate
+
+      - name: Run Prisma migrations, seed, build, and tests
+        run: |
+          npx --prefix server prisma migrate deploy
+          npm run db:seed --prefix server
+          npm run build --prefix server
           npm test --prefix server
 
       - name: Install frontend dependencies and build production bundle
         run: |
-          npm install --prefix client
+          npm ci --prefix client
           npm run build --prefix client

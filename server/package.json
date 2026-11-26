@@ -18,8 +18,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "test:unit": "tsx --test tests/unit.test.ts",
-    "test:integration": "tsx --test tests/auth.integration.test.ts",
-    "test": "tsx --test tests/unit.test.ts tests/auth.integration.test.ts"
+    "test:integration": "tsx --test tests/auth.integration.test.ts tests/learning.integration.test.ts",
+    "test": "tsx --test tests/unit.test.ts tests/auth.integration.test.ts tests/learning.integration.test.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.16.0",

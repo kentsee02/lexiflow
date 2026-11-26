@@ -20,3 +20,21 @@ export const apiRateLimiter = rateLimit({
   skip: skipInTest,
   message: { error: 'Too many requests. Please slow down.' },
 });
+
+export const dictionaryRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skip: skipInTest,
+  message: { error: 'Too many dictionary lookups. Please try again shortly.' },
+});
+
+export const aiRateLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skip: skipInTest,
+  message: { error: 'Too many AI requests. Please slow down.' },
+});

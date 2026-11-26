@@ -92,7 +92,7 @@ The `deploy/` directory and `docker-compose.yml` provide a hybrid production set
 ## Roadmap
 
 - [x] PostgreSQL + Prisma data layer, TypeScript backend, and Cookie JWT authentication
-- [ ] SM-2 spaced repetition (SRS) review queue & 90-day learning activity heatmap
-- [ ] Click-to-lookup dictionary popup in Reading Lab & custom article import
-- [ ] Optional OpenAI-compatible AI article analysis with per-user daily rate limits
+- [x] Backend SM-2 spaced repetition engine, 90-day heatmap analytics, dictionary cache, article import, and optional AI endpoints
+- [ ] Frontend UI upgrade (Dashboard heatmap, SRS review queue, click-to-lookup reader, auth modal & dark mode)
+- [ ] Production deployment automation & database backup runbook
 - [ ] Multi-deck vocabulary lists & CSV/JSON import/export

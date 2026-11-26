@@ -4,8 +4,14 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import helmet from 'helmet';
 import { env } from './config/env.js';
 import { apiRateLimiter } from './middleware/rateLimit.js';
+import { aiRouter } from './routes/ai.js';
+import { articlesRouter } from './routes/articles.js';
 import { authRouter } from './routes/auth.js';
+import { dashboardRouter } from './routes/dashboard.js';
+import { dictionaryRouter } from './routes/dictionary.js';
 import { publicRouter } from './routes/public.js';
+import { quizRouter } from './routes/quiz.js';
+import { vocabRouter } from './routes/vocab.js';
 
 export function createApp() {
   const app = express();
@@ -35,6 +41,12 @@ export function createApp() {
 
   app.use('/api', publicRouter);
   app.use('/api/auth', authRouter);
+  app.use('/api/vocab', vocabRouter);
+  app.use('/api/dictionary', dictionaryRouter);
+  app.use('/api/articles', articlesRouter);
+  app.use('/api/dashboard', dashboardRouter);
+  app.use('/api/quiz', quizRouter);
+  app.use('/api/ai', aiRouter);
 
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'API endpoint not found.' });

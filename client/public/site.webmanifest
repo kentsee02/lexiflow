@@ -1,0 +1,17 @@
+{
+  "name": "LexiFlow",
+  "short_name": "LexiFlow",
+  "description": "Interactive English learning studio with spaced repetition flashcards, bilingual reading, and dictionary lookup.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f7f3",
+  "theme_color": "#0f766e",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

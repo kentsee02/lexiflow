@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <defs>
+    <linearGradient id="lf-bg" x1="6" y1="4" x2="58" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#149184" />
+      <stop offset="100%" stop-color="#0d5c55" />
+    </linearGradient>
+    <linearGradient id="lf-ribbon" x1="18" y1="16" x2="48" y2="48" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#d7f3ef" />
+    </linearGradient>
+  </defs>
+
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#lf-bg)" />
+  <rect x="3.5" y="3.5" width="57" height="57" rx="14.5" stroke="#ffffff" stroke-opacity="0.16" stroke-width="1.5" />
+
+  <!-- Stylized flowing book-page L -->
+  <path
+    d="M19 16.5C19 15.12 20.12 14 21.5 14H24.5C25.88 14 27 15.12 27 16.5V39.5C27 40.33 27.67 41 28.5 41H44.5C45.88 41 47 42.12 47 43.5V45.5C47 46.88 45.88 48 44.5 48H25.5C21.91 48 19 45.09 19 41.5V16.5Z"
+    fill="url(#lf-ribbon)"
+  />
+
+  <!-- Flowing fluency wave + spark accent -->
+  <path
+    d="M32.5 29.5C35.2 26.8 39.2 26.6 42.2 28.9C44.1 30.35 46.3 30.2 48 28.8"
+    stroke="#fbbf24"
+    stroke-width="3.2"
+    stroke-linecap="round"
+  />
+  <circle cx="44" cy="20" r="3.6" fill="#fbbf24" />
+</svg>

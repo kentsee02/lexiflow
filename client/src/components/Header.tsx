@@ -48,9 +48,13 @@ export function Header({
     <header className="site-header">
       <div className="container header-inner">
         <div className="brand">
-          <div className="brand-mark" aria-hidden="true">
-            L
-          </div>
+          <img
+            src="/favicon.svg"
+            alt="LexiFlow"
+            className="brand-logo"
+            width={36}
+            height={36}
+          />
           <div>
             <div className="brand-name">LexiFlow</div>
             <div className="brand-tag">Interactive English Studio</div>

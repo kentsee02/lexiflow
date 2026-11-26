@@ -139,18 +139,13 @@ textarea:focus-visible {
   gap: 10px;
 }
 
-.brand-mark {
+.brand-logo {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #0f766e, #115e59);
-  color: #ffffff;
-  display: grid;
-  place-items: center;
-  font-family: var(--font-serif);
-  font-size: 1.4rem;
-  font-style: italic;
+  display: block;
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
 }
 
 .brand-name {

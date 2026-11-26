@@ -5,11 +5,16 @@
   "description": "LexiFlow — Interactive English Learning Web Application",
   "scripts": {
     "install:all": "npm install --prefix server && npm install --prefix client",
+    "db:up": "docker compose up -d db",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run db:migrate --prefix server",
+    "db:seed": "npm run db:seed --prefix server",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
+    "build:server": "npm run build --prefix server",
     "build:client": "npm run build --prefix client",
+    "build": "npm run build:server && npm run build:client",
     "test:server": "npm test --prefix server",
-    "build": "npm run build:client",
     "test": "npm run test:server"
   }
 }

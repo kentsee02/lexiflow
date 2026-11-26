@@ -5,6 +5,7 @@ client/node_modules/
 
 # Build & coverage outputs
 client/dist/
+server/dist/
 dist/
 coverage/
 
@@ -14,6 +15,8 @@ docs/
 # Secrets, keys, and environment variables
 .env
 .env.*
+server/.env
+server/.env.*
 !.env.example
 *.pem
 *.key

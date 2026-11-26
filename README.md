@@ -1,71 +1,98 @@
+English | [简体中文](./README.zh-CN.md)
+
 # LexiFlow
 
-一个轻量、交互式的英文学习 Web 应用，提供每日地道表达、词汇记忆卡片、情境测验与双语精读练习。
+An interactive full-stack English learning web application built for practical vocabulary acquisition, context-driven quizzes, and bilingual reading practice.
 
-## 功能模块 Features
+## Features
 
-- **每日地道表达（Daily Expression）**：支持美音 / 英音切换、语速调节（`0.8x` / `1.0x`）以及表达浏览切换。
-- **词汇记忆卡片（Flashcards）**：3D 翻转卡片展示词义、音标、英文释义与双语例句，支持按 CEFR 等级（`B1` / `B2` / `C1`）、场景分类、掌握状态与关键词筛选，并可自定义添加或管理词汇。
-- **情境词汇测验（Context Quiz）**：从词库动态生成四选一测验题，即时给出反馈与例句解析，并记录历史最高分与练习次数。
-- **双语精读实验室（Reading Lab）**：支持中英双语切换、全文朗读、重点表达发音卡片以及阅读完成进度记录。
+- **Daily Expressions**: Curated everyday and workplace idioms with US/UK accent switching and adjustable speech speed (`0.8x` / `1.0x`).
+- **Interactive Vocabulary Flashcards**: 3D flip cards with IPA phonetics, English definitions, bilingual example sentences, CEFR level/category filtering, and mastery tracking.
+- **Context Quiz**: Dynamically generated 4-choice vocabulary quizzes with instant example-based explanations and score history.
+- **Bilingual Reading Lab**: Side-by-side English and Chinese reading mode, full-article text-to-speech, clickable key expression chips, and completion tracking.
+- **Account & Guest Modes** *(in progress)*: Instant guest exploration plus authenticated cloud sync backed by PostgreSQL and Prisma.
 
-## 技术栈 Tech Stack
+## Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite, Lucide Icons, Web Speech API
-- **Backend**: Node.js (ESM), Express, CORS, dotenv, JSON file store
-- **Testing & CI**: Node.js built-in test runner (`node:test`), GitHub Actions
+- **Backend**: Node.js, Express, TypeScript, Prisma ORM, PostgreSQL 16, Zod, Helmet
+- **Testing & CI**: Node.js built-in test runner (`node:test` + `tsx`), GitHub Actions with PostgreSQL service
 
-## 目录结构 Structure
+## Project Structure
 
 ```text
 lexiflow/
-├── client/                  # React + Vite + TypeScript 前端应用
-├── server/                  # Node.js + Express REST API 与接口测试
+├── client/                  # React + Vite + TypeScript frontend
+├── server/                  # Express + TypeScript + Prisma REST API
+│   ├── prisma/              # Prisma schema, migrations, and seed script
 │   ├── src/
-│   │   ├── app.js           # 路由与核心业务逻辑
-│   │   ├── index.js         # 服务启动入口
-│   │   ├── data/seed.js     # 初始词库、每日表达与精读文章
-│   │   └── store/jsonStore.js
-│   └── tests/api.test.js    # REST API 集成测试
-├── deploy/                  # 生产环境 Nginx、PM2 与部署脚本模板
-└── .github/workflows/       # CI 自动测试与构建流水线
+│   │   ├── config/          # Zod-validated environment configuration
+│   │   ├── db/              # Shared Prisma client
+│   │   ├── middleware/      # Auth, validation, and rate limiting
+│   │   ├── routes/          # REST API route modules
+│   │   └── utils/           # Password hashing (scrypt) and JWT helpers
+│   └── tests/               # Unit and PostgreSQL integration tests
+├── deploy/                  # Nginx, PM2, and VPS deployment scripts
+├── docker-compose.yml       # Local/production PostgreSQL 16 service
+└── .github/workflows/       # Automated CI checks
 ```
 
-## 本地开发 Local Development
+## Local Development
 
-环境要求：Node.js 20+（推荐 22 LTS）。
+### Prerequisites
+
+- Node.js 20+ (22 LTS recommended)
+- Docker Desktop / Docker Engine (for PostgreSQL 16)
+
+### Setup & Run
 
 ```bash
-# 1. 安装前后端依赖
-npm run install:all
+# 1. Start PostgreSQL 16 in Docker (bound to 127.0.0.1:5432)
+npm run db:up
 
-# 2. 启动后端 API 服务（默认端口 4000）
+# 2. Configure server environment variables
+cp .env.example server/.env
+
+# 3. Install dependencies and generate Prisma client
+npm run install:all
+npm run db:generate --prefix server
+
+# 4. Run database migrations and seed initial articles & dictionary cache
+npm run db:migrate
+npm run db:seed
+
+# 5. Start the backend API (http://localhost:4000)
 npm run dev:server
 
-# 3. 另开终端启动前端开发服务器（默认端口 5173，自动代理 /api 请求到 4000）
+# 6. In another terminal, start the frontend dev server (http://localhost:5173)
 npm run dev:client
 ```
 
-## 测试与构建 Testing & Build
+## Testing & Building
 
 ```bash
-# 运行后端接口自动化测试
+# Run backend unit tests (no database required)
+npm run test:unit --prefix server
+
+# Run full backend unit + PostgreSQL integration tests
 npm test
 
-# TypeScript 类型检查与前端生产构建 (输出至 client/dist)
+# Type-check & build both backend and frontend
 npm run build
 ```
 
-## 生产部署概览 Production Deployment
+## Production Deployment Overview
 
-`deploy/` 目录包含标准生产环境配置模板：
-- `deploy/nginx/lexiflow.conf`：静态托管 `client/dist`，处理 SPA 路由回退，并将 `/api/` 反向代理至后端服务。
-- `deploy/ecosystem.config.cjs`：使用 PM2 守护 `server/src/index.js` 进程。
-- `deploy/deploy.sh`：拉取最新代码、安装依赖、构建前端并平滑重启 API 服务。
+The `deploy/` directory and `docker-compose.yml` provide a hybrid production setup:
+- `docker-compose.yml`: Runs PostgreSQL 16 bound to `127.0.0.1:5432` with persistent volume storage.
+- `deploy/ecosystem.config.cjs`: Runs the compiled Express server (`server/dist/index.js`) under PM2.
+- `deploy/nginx/lexiflow.conf`: Serves static frontend files from `client/dist/` with SPA fallback and proxies `/api/` to `127.0.0.1:4000`.
+- `deploy/deploy.sh`: Pulls updates, runs `prisma migrate deploy`, rebuilds server & client bundles, and reloads PM2.
 
-## 开发路线 Roadmap
+## Roadmap
 
-- [ ] 支持用户账号体系与多端学习进度同步
-- [ ] 引入间隔重复算法（SRS）自动安排词汇复习节奏
-- [ ] 后端持久化由 JSON 文件平滑迁移至 SQLite / PostgreSQL
-- [ ] 新增口语跟读与听写练习模式
+- [x] PostgreSQL + Prisma data layer, TypeScript backend, and Cookie JWT authentication
+- [ ] SM-2 spaced repetition (SRS) review queue & 90-day learning activity heatmap
+- [ ] Click-to-lookup dictionary popup in Reading Lab & custom article import
+- [ ] Optional OpenAI-compatible AI article analysis with per-user daily rate limits
+- [ ] Multi-deck vocabulary lists & CSV/JSON import/export

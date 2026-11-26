@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+export PATH="/usr/local/bin:/usr/bin:/bin:$PATH"
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=768}"
+
 APP_DIR="${APP_DIR:-/var/www/lexiflow}"
 BRANCH="${BRANCH:-main}"
 

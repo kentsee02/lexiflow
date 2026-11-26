@@ -91,6 +91,7 @@ npm run build
 - `deploy/nginx/lexiflow.conf`：静态托管 `client/dist/`（含 SPA 路由回退），并将 `/api/` 反向代理至 `127.0.0.1:4000`。
 - `deploy/deploy.sh`：拉取代码、执行 `prisma migrate deploy`、构建前后端产物并平滑重启 PM2。
 - `deploy/backup-db.sh`：基于 `pg_dump` 的 PostgreSQL 自动压缩备份与过期清理脚本。
+- `.github/workflows/deploy.yml`：配置好 `VPS_HOST`、`VPS_USER`、`VPS_SSH_KEY` Secrets 后，CI 通过即自动 SSH 发布上线。
 
 ## 开发路线
 

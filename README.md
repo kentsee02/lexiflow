@@ -91,6 +91,7 @@ The `deploy/` directory and `docker-compose.yml` provide a hybrid production set
 - `deploy/nginx/lexiflow.conf`: Serves static frontend files from `client/dist/` with SPA fallback and proxies `/api/` to `127.0.0.1:4000`.
 - `deploy/deploy.sh`: Pulls updates, runs `prisma migrate deploy`, rebuilds server & client bundles, and reloads PM2.
 - `deploy/backup-db.sh`: Runs compressed `pg_dump` PostgreSQL backups with configurable retention.
+- `.github/workflows/deploy.yml`: CI-gated SSH auto-deployment to VPS when `VPS_HOST`, `VPS_USER`, and `VPS_SSH_KEY` secrets are configured.
 
 ## Roadmap
 

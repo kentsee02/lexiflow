@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Build & coverage outputs
+client/dist/
+dist/
+coverage/
+
+# Local docs (kept locally, not pushed to public repo)
+docs/
+
+# Secrets, keys, and environment variables
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+id_rsa*
+id_ed25519*
+secrets/
+*.secret*
+
+# Runtime data & logs
+server/data/
+logs/
+*.log
+npm-debug.log*
+
+# OS & Editor / Agent files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+.agents/
+*.swp

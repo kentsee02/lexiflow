@@ -1,12 +1,24 @@
 export type CefrLevel = 'B1' | 'B2' | 'C1';
 export type VocabCategory = 'Tech' | 'Business' | 'Daily' | 'Academic';
+export type VocabStatus = 'new' | 'learning' | 'mastered';
+export type ReviewQuality = 1 | 2 | 3 | 4;
 export type AccentType = 'en-US' | 'en-GB';
-export type AppTab = 'flashcards' | 'quiz' | 'reading';
+export type ThemeMode = 'light' | 'dark';
+export type AppTab = 'dashboard' | 'review' | 'reading' | 'quiz';
 
-export interface VocabItem {
+export interface UserProfile {
+  id: string;
+  email: string;
+  displayName: string;
+  dailyGoal: number;
+  createdAt: string;
+}
+
+export interface VocabCard {
   id: string;
   word: string;
   phonetic: string;
+  audioUrl: string;
   partOfSpeech: string;
   meaningZh: string;
   definitionEn: string;
@@ -14,14 +26,21 @@ export interface VocabItem {
   exampleZh: string;
   level: CefrLevel;
   category: VocabCategory;
-  mastered: boolean;
-  reviewCount: number;
+  sourceArticleId?: string | null;
+  status: VocabStatus;
+  easeFactor: number;
+  intervalDays: number;
+  repetitions: number;
+  nextReviewAt: string;
+  lastReviewedAt?: string | null;
   createdAt: string;
+  intervalPreviews?: Record<ReviewQuality, string>;
 }
 
 export interface CreateVocabPayload {
   word: string;
   phonetic?: string;
+  audioUrl?: string;
   partOfSpeech?: string;
   meaningZh: string;
   definitionEn?: string;
@@ -29,6 +48,7 @@ export interface CreateVocabPayload {
   exampleZh?: string;
   level: CefrLevel;
   category: VocabCategory;
+  sourceArticleId?: string;
 }
 
 export interface DailyPhrase {
@@ -56,6 +76,7 @@ export interface ArticleKeyTerm {
 
 export interface ArticleItem {
   id: string;
+  isSystem?: boolean;
   title: string;
   titleZh: string;
   category: string;
@@ -64,30 +85,78 @@ export interface ArticleItem {
   completed: boolean;
   paragraphs: ArticleParagraph[];
   keyTerms: ArticleKeyTerm[];
+  createdAt?: string;
 }
 
-export interface ActivityEntry {
-  id: string;
-  type: string;
-  label: string;
-  timestamp: string;
+export interface CreateArticlePayload {
+  title: string;
+  titleZh?: string;
+  category?: string;
+  level?: CefrLevel;
+  contentEn: string;
 }
 
-export interface ProgressStats {
-  totalWords: number;
-  masteredWords: number;
-  learningWords: number;
-  articlesRead: number;
-  totalArticles: number;
-  quizzesTaken: number;
-  bestQuizScore: number;
+export interface HeatmapCell {
+  date: string;
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4;
+}
+
+export interface DashboardData {
+  dailyGoal: number;
+  todayReviewed: number;
   streakDays: number;
-  recentActivity: ActivityEntry[];
+  vocabBreakdown: {
+    total: number;
+    newCount: number;
+    learning: number;
+    mastered: number;
+    dueCount: number;
+  };
+  articles: {
+    completed: number;
+    total: number;
+  };
+  quiz: {
+    totalTaken: number;
+    bestScore: number;
+  };
+  heatmap: HeatmapCell[];
+  recentActivity: Array<{
+    id: string;
+    actionType: string;
+    quality: number | null;
+    score: number | null;
+    total: number | null;
+    word: string | null;
+    createdAt: string;
+  }>;
+}
+
+export interface DictionaryLookup {
+  word: string;
+  phonetic: string;
+  audioUrl: string;
+  partOfSpeech: string;
+  definitionEn: string;
+  meaningZh: string;
+  example: string;
+  found: boolean;
+  source: 'cache' | 'external' | 'fallback';
+}
+
+export interface AiStatus {
+  enabled: boolean;
+  dailyLimit: number;
+  usedToday: number;
+  remainingToday: number;
 }
 
 export interface HealthResponse {
   status: string;
   service: string;
+  database: 'connected' | 'disconnected';
+  aiEnabled: boolean;
   environment: string;
   uptimeSeconds: number;
   timestamp: string;

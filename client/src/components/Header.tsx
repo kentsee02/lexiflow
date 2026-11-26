@@ -1,26 +1,48 @@
-import { BookOpen, BrainCircuit, Layers } from 'lucide-react';
-import type { AccentType, AppTab } from '../types';
+import {
+  BookOpen,
+  BrainCircuit,
+  LayoutDashboard,
+  Layers,
+  LogIn,
+  LogOut,
+  Moon,
+  Sun,
+  User,
+} from 'lucide-react';
+import type { AccentType, AppTab, ThemeMode, UserProfile } from '../types';
 
 interface HeaderProps {
   activeTab: AppTab;
   onTabChange: (tab: AppTab) => void;
+  dueCount: number;
   accent: AccentType;
   onAccentChange: (accent: AccentType) => void;
   speechRate: number;
   onRateChange: (rate: number) => void;
+  theme: ThemeMode;
+  onToggleTheme: () => void;
   apiOnline: boolean | null;
   apiLatency: number | null;
+  user: UserProfile | null;
+  onOpenAuth: () => void;
+  onLogout: () => void;
 }
 
 export function Header({
   activeTab,
   onTabChange,
+  dueCount,
   accent,
   onAccentChange,
   speechRate,
   onRateChange,
+  theme,
+  onToggleTheme,
   apiOnline,
   apiLatency,
+  user,
+  onOpenAuth,
+  onLogout,
 }: HeaderProps) {
   return (
     <header className="site-header">
@@ -38,27 +60,36 @@ export function Header({
         <nav className="nav-tabs" aria-label="Primary navigation">
           <button
             type="button"
-            className={`nav-tab ${activeTab === 'flashcards' ? 'active' : ''}`}
-            onClick={() => onTabChange('flashcards')}
+            className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => onTabChange('dashboard')}
           >
-            <Layers size={16} />
-            <span>词汇卡片 Flashcards</span>
+            <LayoutDashboard size={15} />
+            <span>今日概览</span>
           </button>
           <button
             type="button"
-            className={`nav-tab ${activeTab === 'quiz' ? 'active' : ''}`}
-            onClick={() => onTabChange('quiz')}
+            className={`nav-tab ${activeTab === 'review' ? 'active' : ''}`}
+            onClick={() => onTabChange('review')}
           >
-            <BrainCircuit size={16} />
-            <span>情境测验 Quiz</span>
+            <Layers size={15} />
+            <span>间隔复习</span>
+            {dueCount > 0 && <span className="tab-badge">{dueCount}</span>}
           </button>
           <button
             type="button"
             className={`nav-tab ${activeTab === 'reading' ? 'active' : ''}`}
             onClick={() => onTabChange('reading')}
           >
-            <BookOpen size={16} />
-            <span>双语精读 Reading</span>
+            <BookOpen size={15} />
+            <span>双语精读</span>
+          </button>
+          <button
+            type="button"
+            className={`nav-tab ${activeTab === 'quiz' ? 'active' : ''}`}
+            onClick={() => onTabChange('quiz')}
+          >
+            <BrainCircuit size={15} />
+            <span>情境测验</span>
           </button>
         </nav>
 
@@ -97,6 +128,16 @@ export function Header({
             </button>
           </div>
 
+          <button
+            type="button"
+            className="btn btn-secondary btn-icon"
+            onClick={onToggleTheme}
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? '切换浅色模式' : '切换深色模式'}
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
+
           <div className="api-status" title="Express backend /api/health status">
             <span
               className={`status-dot ${
@@ -105,12 +146,34 @@ export function Header({
             />
             <span>
               {apiOnline === true
-                ? `API Online${apiLatency ? ` · ${apiLatency}ms` : ''}`
+                ? `${apiLatency ? `${apiLatency}ms` : 'Online'}`
                 : apiOnline === false
-                  ? 'API Offline'
-                  : 'Checking...'}
+                  ? 'Offline'
+                  : '...'}
             </span>
           </div>
+
+          {user ? (
+            <div className="user-chip">
+              <User size={14} color="var(--brand-teal)" />
+              <span>{user.displayName}</span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-icon"
+                style={{ padding: 3 }}
+                onClick={onLogout}
+                title="退出登录"
+                aria-label="Log out"
+              >
+                <LogOut size={14} />
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="btn btn-primary" onClick={onOpenAuth}>
+              <LogIn size={15} />
+              <span>登录 / 注册</span>
+            </button>
+          )}
         </div>
       </div>
     </header>

@@ -93,6 +93,6 @@ The `deploy/` directory and `docker-compose.yml` provide a hybrid production set
 
 - [x] PostgreSQL + Prisma data layer, TypeScript backend, and Cookie JWT authentication
 - [x] Backend SM-2 spaced repetition engine, 90-day heatmap analytics, dictionary cache, article import, and optional AI endpoints
-- [ ] Frontend UI upgrade (Dashboard heatmap, SRS review queue, click-to-lookup reader, auth modal & dark mode)
+- [x] Frontend UI upgrade (Dashboard heatmap, SRS review queue, click-to-lookup reader, auth modal & dark mode)
 - [ ] Production deployment automation & database backup runbook
 - [ ] Multi-deck vocabulary lists & CSV/JSON import/export

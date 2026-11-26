@@ -1,23 +1,29 @@
 import { useMemo, useState } from 'react';
 import { Check, Plus, RotateCw, Search, Trash2, Volume2 } from 'lucide-react';
-import type { AccentType, VocabItem } from '../types';
-import { speakEnglish } from '../utils/speech';
+import type { AccentType, VocabCard, VocabStatus } from '../types';
+import { playAudioOrSpeak } from '../utils/speech';
 
 interface FlashcardDeckProps {
-  items: VocabItem[];
+  items: VocabCard[];
   accent: AccentType;
   speechRate: number;
-  onToggleMastered: (item: VocabItem) => Promise<void>;
+  onToggleStatus: (item: VocabCard) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onOpenAddModal: () => void;
   onSpeechUnsupported: () => void;
 }
 
+const STATUS_LABEL: Record<VocabStatus, string> = {
+  new: '新词',
+  learning: '学习中',
+  mastered: '已掌握',
+};
+
 export function FlashcardDeck({
   items,
   accent,
   speechRate,
-  onToggleMastered,
+  onToggleStatus,
   onDelete,
   onOpenAddModal,
   onSpeechUnsupported,
@@ -25,7 +31,7 @@ export function FlashcardDeck({
   const [query, setQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState('ALL');
   const [categoryFilter, setCategoryFilter] = useState('ALL');
-  const [statusFilter, setStatusFilter] = useState<'all' | 'learning' | 'mastered'>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | VocabStatus>('all');
   const [flippedIds, setFlippedIds] = useState<Record<string, boolean>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
 
@@ -34,8 +40,7 @@ export function FlashcardDeck({
     return items.filter((item) => {
       if (levelFilter !== 'ALL' && item.level !== levelFilter) return false;
       if (categoryFilter !== 'ALL' && item.category !== categoryFilter) return false;
-      if (statusFilter === 'mastered' && !item.mastered) return false;
-      if (statusFilter === 'learning' && item.mastered) return false;
+      if (statusFilter !== 'all' && item.status !== statusFilter) return false;
       if (q) {
         const hay = `${item.word} ${item.meaningZh} ${item.definitionEn} ${item.example}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -48,15 +53,15 @@ export function FlashcardDeck({
     setFlippedIds((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleSpeak = (text: string) => {
-    const ok = speakEnglish(text, accent, speechRate);
+  const handleSpeak = async (audioUrl: string | undefined, text: string) => {
+    const ok = await playAudioOrSpeak(audioUrl, text, accent, speechRate);
     if (!ok) onSpeechUnsupported();
   };
 
-  const handleMaster = async (item: VocabItem) => {
+  const handleMaster = async (item: VocabCard) => {
     setBusyId(item.id);
     try {
-      await onToggleMastered(item);
+      await onToggleStatus(item);
     } finally {
       setBusyId(null);
     }
@@ -114,12 +119,13 @@ export function FlashcardDeck({
           <select
             className="select-pill"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'learning' | 'mastered')}
+            onChange={(e) => setStatusFilter(e.target.value as 'all' | VocabStatus)}
             aria-label="Filter by mastery status"
           >
             <option value="all">全部状态 ({items.length})</option>
-            <option value="learning">待巩固 ({items.filter((i) => !i.mastered).length})</option>
-            <option value="mastered">已掌握 ({items.filter((i) => i.mastered).length})</option>
+            <option value="new">新词 ({items.filter((i) => i.status === 'new').length})</option>
+            <option value="learning">学习中 ({items.filter((i) => i.status === 'learning').length})</option>
+            <option value="mastered">已掌握 ({items.filter((i) => i.status === 'mastered').length})</option>
           </select>
         </div>
 
@@ -150,22 +156,32 @@ export function FlashcardDeck({
           {filtered.map((item) => {
             const isFlipped = Boolean(flippedIds[item.id]);
             const isBusy = busyId === item.id;
+            const isMastered = item.status === 'mastered';
 
             return (
               <div className="flashcard-scene" key={item.id}>
                 <div className={`flashcard ${isFlipped ? 'flipped' : ''}`}>
-                  {/* Front */}
                   <div className="card-face front">
                     <div className="card-top">
                       <div className="badges">
                         <span className="badge level">{item.level}</span>
                         <span className="badge">{item.category}</span>
-                        {item.mastered && <span className="badge mastered">已掌握</span>}
+                        <span
+                          className={`badge ${
+                            item.status === 'mastered'
+                              ? 'mastered'
+                              : item.status === 'learning'
+                                ? 'learning'
+                                : ''
+                          }`}
+                        >
+                          {STATUS_LABEL[item.status]}
+                        </span>
                       </div>
                       <button
                         type="button"
                         className="btn btn-ghost btn-icon"
-                        onClick={() => handleSpeak(item.word)}
+                        onClick={() => void handleSpeak(item.audioUrl, item.word)}
                         aria-label={`Pronounce ${item.word}`}
                         title="点击发音"
                       >
@@ -197,12 +213,12 @@ export function FlashcardDeck({
                     <div className="card-actions">
                       <button
                         type="button"
-                        className={`master-btn ${item.mastered ? 'active' : ''}`}
+                        className={`master-btn ${isMastered ? 'active' : ''}`}
                         disabled={isBusy}
-                        onClick={() => handleMaster(item)}
+                        onClick={() => void handleMaster(item)}
                       >
                         <Check size={14} />
-                        <span>{item.mastered ? '已掌握' : '标为掌握'}</span>
+                        <span>{isMastered ? '已掌握' : '标为掌握'}</span>
                       </button>
 
                       <button
@@ -217,17 +233,17 @@ export function FlashcardDeck({
                     </div>
                   </div>
 
-                  {/* Back */}
                   <div className="card-face back">
                     <div className="card-top">
                       <div className="badges">
                         <span className="badge level">{item.word}</span>
-                        <span className="badge">复习 {item.reviewCount} 次</span>
+                        <span className="badge">复习 {item.repetitions} 次</span>
+                        {item.intervalDays > 0 && <span className="badge">间隔 {item.intervalDays}d</span>}
                       </div>
                       <button
                         type="button"
                         className="btn btn-ghost btn-icon"
-                        onClick={() => handleSpeak(item.example)}
+                        onClick={() => void handleSpeak(undefined, item.example)}
                         aria-label={`Read example for ${item.word}`}
                         title="朗读例句"
                       >
@@ -258,12 +274,12 @@ export function FlashcardDeck({
                     <div className="card-actions">
                       <button
                         type="button"
-                        className={`master-btn ${item.mastered ? 'active' : ''}`}
+                        className={`master-btn ${isMastered ? 'active' : ''}`}
                         disabled={isBusy}
-                        onClick={() => handleMaster(item)}
+                        onClick={() => void handleMaster(item)}
                       >
                         <Check size={14} />
-                        <span>{item.mastered ? '已掌握' : '标为掌握'}</span>
+                        <span>{isMastered ? '已掌握' : '标为掌握'}</span>
                       </button>
 
                       <div style={{ display: 'flex', gap: 4 }}>
@@ -280,7 +296,7 @@ export function FlashcardDeck({
                           type="button"
                           className="btn btn-ghost btn-icon"
                           disabled={isBusy}
-                          onClick={() => handleDelete(item.id)}
+                          onClick={() => void handleDelete(item.id)}
                           aria-label={`Delete ${item.word}`}
                           title="删除单词"
                         >

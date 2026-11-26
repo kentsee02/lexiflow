@@ -1,13 +1,15 @@
 import { useState, type FormEvent } from 'react';
-import { X } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
+import { generateExampleAi } from '../api/client';
 import type { CefrLevel, CreateVocabPayload, VocabCategory } from '../types';
 
 interface AddWordModalProps {
+  aiAvailable: boolean;
   onClose: () => void;
   onCreate: (payload: CreateVocabPayload) => Promise<void>;
 }
 
-export function AddWordModal({ onClose, onCreate }: AddWordModalProps) {
+export function AddWordModal({ aiAvailable, onClose, onCreate }: AddWordModalProps) {
   const [word, setWord] = useState('');
   const [phonetic, setPhonetic] = useState('');
   const [partOfSpeech, setPartOfSpeech] = useState('verb');
@@ -18,7 +20,30 @@ export function AddWordModal({ onClose, onCreate }: AddWordModalProps) {
   const [level, setLevel] = useState<CefrLevel>('B2');
   const [category, setCategory] = useState<VocabCategory>('Tech');
   const [submitting, setSubmitting] = useState(false);
+  const [generatingAi, setGeneratingAi] = useState(false);
   const [error, setError] = useState('');
+
+  const handleAiGenerate = async () => {
+    if (!word.trim()) {
+      setError('请先填写单词再调用 AI 生成例句。');
+      return;
+    }
+    setError('');
+    setGeneratingAi(true);
+    try {
+      const res = await generateExampleAi({
+        word: word.trim(),
+        meaningZh: meaningZh.trim() || undefined,
+        level,
+      });
+      setExample(res.example);
+      setExampleZh(res.exampleZh);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI 生成失败');
+    } finally {
+      setGeneratingAi(false);
+    }
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -143,13 +168,27 @@ export function AddWordModal({ onClose, onCreate }: AddWordModalProps) {
             </div>
 
             <div className="form-field full">
-              <label htmlFor="example-input">英文例句 Example *</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label htmlFor="example-input">英文例句 Example *</label>
+                {aiAvailable && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    style={{ padding: '2px 8px', fontSize: '0.76rem', color: 'var(--brand-teal)' }}
+                    disabled={generatingAi}
+                    onClick={() => void handleAiGenerate()}
+                  >
+                    <Sparkles size={13} />
+                    <span>{generatingAi ? '生成中...' : 'AI 生成例句'}</span>
+                  </button>
+                )}
+              </div>
               <textarea
                 id="example-input"
                 rows={2}
                 value={example}
                 onChange={(e) => setExample(e.target.value)}
-                placeholder="We deploy the updated bundle automatically after tests pass."
+                placeholder="We ship reliable software with automated checks."
                 required
               />
             </div>
@@ -160,7 +199,7 @@ export function AddWordModal({ onClose, onCreate }: AddWordModalProps) {
                 id="example-zh-input"
                 value={exampleZh}
                 onChange={(e) => setExampleZh(e.target.value)}
-                placeholder="测试通过后，我们会自动部署更新后的构建包。"
+                placeholder="我们借助自动化检查来稳定交付软件。"
               />
             </div>
           </div>

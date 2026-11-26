@@ -24,3 +24,22 @@ export function speakEnglish(text: string, accent: AccentType = 'en-US', rate = 
   window.speechSynthesis.speak(utterance);
   return true;
 }
+
+export async function playAudioOrSpeak(
+  audioUrl: string | undefined,
+  fallbackText: string,
+  accent: AccentType = 'en-US',
+  rate = 1.0
+): Promise<boolean> {
+  if (audioUrl && audioUrl.trim()) {
+    try {
+      const audio = new Audio(audioUrl);
+      audio.playbackRate = rate;
+      await audio.play();
+      return true;
+    } catch {
+      // Fallback to Web Speech API below
+    }
+  }
+  return speakEnglish(fallbackText, accent, rate);
+}

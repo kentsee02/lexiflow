@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { ArrowRight, RefreshCw, Trophy, Volume2 } from 'lucide-react';
-import type { AccentType, VocabItem } from '../types';
-import { speakEnglish } from '../utils/speech';
+import type { AccentType, VocabCard } from '../types';
+import { playAudioOrSpeak } from '../utils/speech';
 
 interface QuizPanelProps {
-  vocab: VocabItem[];
+  vocab: VocabCard[];
   accent: AccentType;
   speechRate: number;
   onCompleteQuiz: (score: number, total: number) => Promise<void>;
@@ -12,11 +12,11 @@ interface QuizPanelProps {
 }
 
 interface QuizQuestion {
-  target: VocabItem;
-  options: VocabItem[];
+  target: VocabCard;
+  options: VocabCard[];
 }
 
-function buildQuestions(vocab: VocabItem[], count = 5): QuizQuestion[] {
+function buildQuestions(vocab: VocabCard[], count = 5): QuizQuestion[] {
   if (vocab.length < 4) return [];
   const shuffled = [...vocab].sort(() => Math.random() - 0.5);
   const selected = shuffled.slice(0, Math.min(count, vocab.length));
@@ -103,7 +103,7 @@ export function QuizPanel({
             <h2 style={{ margin: 0, fontSize: '1.35rem' }}>本轮测验完成！</h2>
             <p style={{ margin: '4px 0 0', color: 'var(--ink-secondary)' }}>
               正确 {score} / {questions.length} 题（得分率 {percent}%）
-              {saving ? ' · 正在同步成绩到后端...' : ' · 成绩已记录到学习档案'}
+              {saving ? ' · 正在记录成绩...' : ' · 成绩已计入今日概览与热力图'}
             </p>
           </div>
         </div>
@@ -144,7 +144,11 @@ export function QuizPanel({
           type="button"
           className="btn btn-secondary btn-icon"
           onClick={() => {
-            if (!speakEnglish(active.target.word, accent, speechRate)) onSpeechUnsupported();
+            void playAudioOrSpeak(active.target.audioUrl, active.target.word, accent, speechRate).then(
+              (ok) => {
+                if (!ok) onSpeechUnsupported();
+              }
+            );
           }}
           aria-label="Play word pronunciation"
         >
@@ -181,14 +185,14 @@ export function QuizPanel({
       {answered && (
         <div className="quiz-feedback">
           <div>
-            <strong style={{ color: isCorrect ? '#15803d' : 'var(--danger)' }}>
+            <strong style={{ color: isCorrect ? 'var(--success)' : 'var(--danger)' }}>
               {isCorrect ? '回答正确！' : `正确答案是：${active.target.meaningZh}`}
             </strong>
             <p style={{ margin: '4px 0 0', fontSize: '0.88rem', color: 'var(--ink-secondary)' }}>
               例句：{active.target.example}
             </p>
           </div>
-          <button type="button" className="btn btn-primary" onClick={handleNext}>
+          <button type="button" className="btn btn-primary" onClick={() => void handleNext()}>
             <span>{currentIndex + 1 < questions.length ? '下一题' : '查看成绩'}</span>
             <ArrowRight size={16} />
           </button>

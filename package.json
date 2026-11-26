@@ -9,6 +9,7 @@
     "db:down": "docker compose down",
     "db:migrate": "npm run db:migrate --prefix server",
     "db:seed": "npm run db:seed --prefix server",
+    "db:import-dict": "npm run db:import-dict --prefix server",
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "build:server": "npm run build --prefix server",

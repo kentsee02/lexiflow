@@ -57,9 +57,10 @@ cp .env.example server/.env
 npm run install:all
 npm run db:generate --prefix server
 
-# 4. 执行数据库迁移并写入初始文章与词典缓存
+# 4. 执行数据库迁移、写入初始文章并导入约 4,500 个高频词典词条
 npm run db:migrate
 npm run db:seed
+npm run db:import-dict
 
 # 5. 启动后端 API 服务（默认端口 4000）
 npm run dev:server

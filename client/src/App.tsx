@@ -467,6 +467,7 @@ export default function App() {
                 onReviewCard={handleReviewCard}
                 onToggleStatus={handleToggleVocabStatus}
                 onDelete={handleDeleteVocab}
+                onQuickAddWord={handleCreateVocab}
                 onOpenAddModal={() => setShowAddModal(true)}
                 onGoReading={() => setActiveTab('reading')}
                 onSpeechUnsupported={() => showToast('当前浏览器不支持语音合成')}

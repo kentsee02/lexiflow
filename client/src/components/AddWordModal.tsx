@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
-import { Sparkles, X } from 'lucide-react';
-import { generateExampleAi } from '../api/client';
+import { Search, Sparkles, X } from 'lucide-react';
+import { generateExampleAi, lookupDictionary } from '../api/client';
 import type { CefrLevel, CreateVocabPayload, VocabCategory } from '../types';
 
 interface AddWordModalProps {
@@ -20,8 +20,33 @@ export function AddWordModal({ aiAvailable, onClose, onCreate }: AddWordModalPro
   const [level, setLevel] = useState<CefrLevel>('B2');
   const [category, setCategory] = useState<VocabCategory>('Tech');
   const [submitting, setSubmitting] = useState(false);
+  const [lookingUp, setLookingUp] = useState(false);
   const [generatingAi, setGeneratingAi] = useState(false);
   const [error, setError] = useState('');
+
+  const handleAutoFill = async () => {
+    if (!word.trim()) {
+      setError('请先输入英文单词再自动填充。');
+      return;
+    }
+    setError('');
+    setLookingUp(true);
+    try {
+      const res = await lookupDictionary(word.trim());
+      if (res.phonetic) setPhonetic(res.phonetic);
+      if (res.partOfSpeech) setPartOfSpeech(res.partOfSpeech);
+      if (res.meaningZh && !meaningZh.trim()) setMeaningZh(res.meaningZh);
+      if (res.definitionEn && !definitionEn.trim()) setDefinitionEn(res.definitionEn);
+      if (res.example && !example.trim()) setExample(res.example);
+      if (!res.found) {
+        setError('词典未找到该词，你可以继续手动填写。');
+      }
+    } catch {
+      setError('自动查词失败，请手动填写。');
+    } finally {
+      setLookingUp(false);
+    }
+  };
 
   const handleAiGenerate = async () => {
     if (!word.trim()) {
@@ -89,7 +114,19 @@ export function AddWordModal({ aiAvailable, onClose, onCreate }: AddWordModalPro
         <form onSubmit={handleSubmit}>
           <div className="form-grid">
             <div className="form-field">
-              <label htmlFor="word-input">单词 Word *</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label htmlFor="word-input">单词 Word *</label>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ padding: '1px 6px', fontSize: '0.74rem', color: 'var(--brand-teal)' }}
+                  disabled={lookingUp}
+                  onClick={() => void handleAutoFill()}
+                >
+                  <Search size={12} />
+                  <span>{lookingUp ? '查询中...' : '自动填充'}</span>
+                </button>
+              </div>
               <input
                 id="word-input"
                 value={word}

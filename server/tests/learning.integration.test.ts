@@ -113,7 +113,7 @@ describe('LexiFlow Learning Engine Integration (PostgreSQL)', () => {
     assert.equal(reviewBody.reviewLog.actionType, 'srs_review');
   });
 
-  it('looks up dictionary cache and rejects invalid words', async () => {
+  it('looks up dictionary cache, searches entries, and rejects invalid words', async () => {
     const badRes = await fetch(`${baseUrl}/api/dictionary/12345`);
     assert.equal(badRes.status, 400);
 
@@ -123,6 +123,19 @@ describe('LexiFlow Learning Engine Integration (PostgreSQL)', () => {
     assert.equal(hitBody.word, 'articulate');
     assert.equal(hitBody.found, true);
     assert.equal(hitBody.source, 'cache');
+
+    const browseRes = await fetch(`${baseUrl}/api/dictionary?q=art&limit=5`);
+    assert.equal(browseRes.status, 200);
+    const browseBody = (await browseRes.json()) as {
+      items: Array<{ word: string }>;
+      total: number;
+      page: number;
+      totalPages: number;
+    };
+    assert.ok(browseBody.items.length >= 1);
+    assert.ok(browseBody.total >= 1);
+    assert.equal(browseBody.page, 1);
+    assert.ok(browseBody.totalPages >= 1);
   });
 
   it('imports custom articles and isolates article completion per user', async () => {

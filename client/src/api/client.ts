@@ -86,6 +86,34 @@ export function lookupDictionary(word: string): Promise<DictionaryLookup> {
   return request<DictionaryLookup>(`/api/dictionary/${encodeURIComponent(word)}`);
 }
 
+export interface DictionaryBrowseEntry {
+  word: string;
+  phonetic: string;
+  audioUrl: string;
+  partOfSpeech: string;
+  definitionEn: string;
+  meaningZh: string;
+  example: string;
+}
+
+export function browseDictionary(params: {
+  q?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{
+  items: DictionaryBrowseEntry[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}> {
+  const search = new URLSearchParams();
+  if (params.q?.trim()) search.set('q', params.q.trim());
+  if (params.page) search.set('page', String(params.page));
+  if (params.limit) search.set('limit', String(params.limit));
+  return request(`/api/dictionary?${search.toString()}`);
+}
+
 // Auth
 export function fetchMe(): Promise<{ user: UserProfile | null }> {
   return request('/api/auth/me');

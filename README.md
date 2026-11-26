@@ -57,9 +57,10 @@ cp .env.example server/.env
 npm run install:all
 npm run db:generate --prefix server
 
-# 4. Run database migrations and seed initial articles & dictionary cache
+# 4. Run database migrations, seed initial articles, and import ~4,500 core dictionary entries
 npm run db:migrate
 npm run db:seed
+npm run db:import-dict
 
 # 5. Start the backend API (http://localhost:4000)
 npm run dev:server

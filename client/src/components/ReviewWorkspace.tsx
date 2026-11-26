@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BookOpen, CheckCircle2, Eye, Sparkles, Volume2 } from 'lucide-react';
-import type { AccentType, ReviewQuality, VocabCard } from '../types';
+import type { AccentType, CreateVocabPayload, ReviewQuality, VocabCard } from '../types';
 import { playAudioOrSpeak } from '../utils/speech';
 import { previewReviewIntervals } from '../utils/srs';
 import { FlashcardDeck } from './FlashcardDeck';
+import { WordBankBrowser } from './WordBankBrowser';
 
 interface ReviewWorkspaceProps {
   vocab: VocabCard[];
@@ -13,6 +14,7 @@ interface ReviewWorkspaceProps {
   onReviewCard: (id: string, quality: ReviewQuality) => Promise<void>;
   onToggleStatus: (card: VocabCard) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onQuickAddWord: (payload: CreateVocabPayload) => Promise<void>;
   onOpenAddModal: () => void;
   onGoReading: () => void;
   onSpeechUnsupported: () => void;
@@ -26,13 +28,18 @@ export function ReviewWorkspace({
   onReviewCard,
   onToggleStatus,
   onDelete,
+  onQuickAddWord,
   onOpenAddModal,
   onGoReading,
   onSpeechUnsupported,
 }: ReviewWorkspaceProps) {
-  const [subTab, setSubTab] = useState<'srs' | 'library'>(dueCards.length > 0 ? 'srs' : 'library');
+  const [subTab, setSubTab] = useState<'srs' | 'library' | 'explore'>(
+    dueCards.length > 0 ? 'srs' : 'library'
+  );
   const [revealed, setRevealed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const savedWordSet = useMemo(() => new Set(vocab.map((v) => v.word.toLowerCase())), [vocab]);
 
   const activeCard = dueCards[0] ?? null;
 
@@ -98,12 +105,23 @@ export function ReviewWorkspace({
             className={`subtab ${subTab === 'library' ? 'active' : ''}`}
             onClick={() => setSubTab('library')}
           >
-            全部词库（{vocab.length}）
+            我的词库（{vocab.length}）
+          </button>
+          <button
+            type="button"
+            className={`subtab ${subTab === 'explore' ? 'active' : ''}`}
+            onClick={() => setSubTab('explore')}
+          >
+            高频词库探索
           </button>
         </div>
 
         <span style={{ fontSize: '0.8rem', color: 'var(--ink-muted)' }}>
-          {subTab === 'srs' ? '快捷键：空格翻面 · 1-4 评分' : '点击卡片即可翻转查看双语例句'}
+          {subTab === 'srs'
+            ? '快捷键：空格翻面 · 1-4 评分'
+            : subTab === 'explore'
+              ? '从数千高频词中一键挑选加入你的复习计划'
+              : '点击卡片即可翻转查看双语例句'}
         </span>
       </div>
 
@@ -260,7 +278,7 @@ export function ReviewWorkspace({
             </div>
           </div>
         )
-      ) : (
+      ) : subTab === 'library' ? (
         <FlashcardDeck
           items={vocab}
           accent={accent}
@@ -268,6 +286,14 @@ export function ReviewWorkspace({
           onToggleStatus={onToggleStatus}
           onDelete={onDelete}
           onOpenAddModal={onOpenAddModal}
+          onSpeechUnsupported={onSpeechUnsupported}
+        />
+      ) : (
+        <WordBankBrowser
+          savedWordSet={savedWordSet}
+          accent={accent}
+          speechRate={speechRate}
+          onAddWord={onQuickAddWord}
           onSpeechUnsupported={onSpeechUnsupported}
         />
       )}

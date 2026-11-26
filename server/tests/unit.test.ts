@@ -5,6 +5,7 @@ import { signAuthToken, verifyAuthToken } from '../src/utils/jwt.js';
 import { calculateSm2Review, previewReviewIntervals } from '../src/services/srs.js';
 import { buildHeatmap, computeStreakDays } from '../src/services/dashboard.js';
 import { normalizeLookupWord } from '../src/services/dictionary.js';
+import { parseCsvLine, parseEcdictRow } from '../src/utils/ecdictParser.js';
 import {
   AiServiceError,
   analyzeArticleWithAi,
@@ -209,5 +210,31 @@ describe('Optional AI enhancement service', () => {
     assert.equal(result.translations.length, 1);
     assert.equal(result.remainingToday, 1);
     assert.equal(recordedFeature, 'analyze_article');
+  });
+});
+
+describe('ECDICT parser', () => {
+  it('parses quoted CSV fields with escaped quotes', () => {
+    const cols = parseCsvLine('resilient,"rɪˈzɪliənt","able to ""bounce back"", quickly","adj. 有韧性的\\n有弹性的",a,4,1,cet6,1200,1100,,,');
+    assert.equal(cols[0], 'resilient');
+    assert.equal(cols[2], 'able to "bounce back", quickly');
+  });
+
+  it('keeps clean high-frequency Oxford/Collins entries and formats newlines', () => {
+    const row = parseEcdictRow(
+      'resilient,rɪˈzɪliənt,"able to recover quickly\\nstrong","adj. 有韧性的\\n能迅速恢复的",a/j,4,1,cet6 ielts,1200,1100,,,'
+    );
+    assert.ok(row);
+    assert.equal(row.word, 'resilient');
+    assert.equal(row.phonetic, '/rɪˈzɪliənt/');
+    assert.equal(row.meaningZh, 'adj. 有韧性的；能迅速恢复的');
+    assert.equal(row.definitionEn, 'able to recover quickly; strong');
+    assert.equal(row.partOfSpeech, 'a');
+  });
+
+  it('rejects phrases, uppercase proper nouns, and low-frequency entries without tags', () => {
+    assert.equal(parseEcdictRow('New York,nuː jɔːrk,city,n. 纽约,n,0,0,,100,100,,,'), null);
+    assert.equal(parseEcdictRow('hit the ground running,hɪt,start fast,vt. 立即上手,,0,0,,,,,'), null);
+    assert.equal(parseEcdictRow('obscureword,əb,rare,n. 冷僻词,n,1,0,,35000,35000,,,'), null);
   });
 });
